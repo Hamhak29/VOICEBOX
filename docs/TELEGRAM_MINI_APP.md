@@ -15,6 +15,8 @@ The deployment exposes only the small allowlisted API surface needed by the app.
 - Generate an HTTPS domain; the app is available at `/miniapp`.
 - Set `TELEGRAM_APP_URL=https://YOUR-DOMAIN/miniapp`.
 - Set `TELEGRAM_BOT_TOKEN` as a Railway secret variable, never in GitHub or frontend.
+- With the token configured, `/id` returns the sender's numeric ID even before
+  the allowlist is configured; it grants no access to studio data.
 - Set `TELEGRAM_ALLOWED_USER_IDS` to the owner's numeric Telegram ID. Empty means closed.
 - Use a dedicated bot with no existing webhook or other polling process.
 - Send `/start` to the bot; it replies with the launch button and sets the private menu.

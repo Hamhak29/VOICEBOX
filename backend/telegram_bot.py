@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 async def run_bot(token: str, allowed: set[int], url: str):
-    if not token or not allowed or not url.startswith("https://"):
+    if not token or not url.startswith("https://"):
         return
     async with httpx.AsyncClient(timeout=40) as client:
         async def call(method, payload):
@@ -36,7 +36,10 @@ async def run_bot(token: str, allowed: set[int], url: str):
                         offset = update["update_id"] + 1
                         message = update.get("message", {})
                         sender = message.get("from", {}).get("id")
-                        if sender in allowed and message.get("chat", {}).get("type") == "private" and message.get("text", "").split(" ")[0].split("@")[0] in {"/start", "/app"}:
+                        command = message.get("text", "").split(" ")[0].split("@")[0]
+                        if sender and message.get("chat", {}).get("type") == "private" and command == "/id":
+                            await call("sendMessage", {"chat_id": sender, "text": f"Твой Telegram ID: {sender}"})
+                        if sender in allowed and message.get("chat", {}).get("type") == "private" and command in {"/start", "/app"}:
                             await call("sendMessage", {"chat_id": sender, "text": "VOICEBOX — твоя личная голосовая студия. Открой приложение, чтобы озвучить текст, добавить голос и получить запись.", "reply_markup": {"inline_keyboard": [[{"text": "Открыть VOICEBOX", "web_app": {"url": url}}]]}})
                 except asyncio.CancelledError:
                     raise

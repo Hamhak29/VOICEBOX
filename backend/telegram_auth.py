@@ -23,7 +23,7 @@ def validate_init_data(raw: str, token: str, allowed: set[int], now=None) -> dic
     if age < -30 or age > 3600:
         raise ValueError("Telegram login expired")
     user = json.loads(fields.get("user", "{}"))
-    if type(user.get("id")) is not int or user["id"] not in allowed:
+    if not isinstance(user, dict) or type(user.get("id")) is not int or user["id"] not in allowed:
         raise PermissionError("Access denied")
     return user
 

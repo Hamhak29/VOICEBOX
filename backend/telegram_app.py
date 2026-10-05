@@ -77,6 +77,8 @@ async def private_api(request: Request, call_next):
                 data = await request.json()
             except (ValueError, UnicodeDecodeError):
                 return JSONResponse({"detail": "Invalid JSON"}, status_code=400)
+            if not isinstance(data, dict) or (path == "/generate" and not isinstance(data.get("text"), str)):
+                return JSONResponse({"detail": "Invalid request"}, status_code=400)
             if path == "/generate" and (data.get("engine") not in {"qwen", "qwen_custom_voice"} or data.get("model_size") != "0.6B" or len(data.get("text", "")) > 2000 or data.get("personality")):
                 return JSONResponse({"detail": "Допустимы Qwen 0.6B и текст до 2000 символов."}, status_code=400)
             if path == "/models/download" and data.get("model_name") not in MODELS:

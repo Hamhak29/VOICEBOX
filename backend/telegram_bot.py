@@ -23,7 +23,11 @@ async def run_bot(token: str, allowed: set[int], url: str):
                 logger.warning("Bot has a webhook; polling was not started. Use a dedicated bot.")
                 return
             for uid in allowed:
-                await call("setChatMenuButton", {"chat_id": uid, "menu_button": {"type": "web_app", "text": "VOICEBOX", "web_app": {"url": url}}})
+                try:
+                    await call("setChatMenuButton", {"chat_id": uid, "menu_button": {"type": "web_app", "text": "VOICEBOX", "web_app": {"url": url}}})
+                except Exception:
+                    # A new user may not have started this bot yet. Poll anyway.
+                    logger.info("Private menu will be available after /start")
             offset = None
             while True:
                 try:

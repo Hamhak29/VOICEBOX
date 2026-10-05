@@ -6,7 +6,10 @@ The deployment exposes only the small allowlisted API surface needed by the app.
 
 ## Railway
 
-- Deploy the `telegram-mini-app` branch using `railway.json` and `Dockerfile.telegram`.
+- Deploy the `telegram-mini-app` branch with Dockerfile path `Dockerfile.telegram`.
+- Configure the service healthcheck as `/healthz` with a 300-second timeout.
+  Railway's old `railway.json` Config as Code is deprecated; service settings are
+  configured directly through Railway.
 - Attach one persistent volume at `/app/data` (database, profiles, audio, HF cache).
 - Run one replica and one Uvicorn worker. The engine uses SQLite and an in-process queue.
 - Generate an HTTPS domain; the app is available at `/miniapp`.

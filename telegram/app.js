@@ -65,7 +65,7 @@ $('text').oninput = () => { $('count').textContent = `${$('text').value.length} 
 document.querySelectorAll('[data-tab]').forEach((button) => { button.onclick = async () => { document.querySelectorAll('[data-tab]').forEach((b) => b.classList.toggle('active', b === button)); ['create','voices','history'].forEach((id) => { $(id).hidden = id !== button.dataset.tab; }); if (button.dataset.tab === 'history') { try { await loadHistory(); } catch (e) { notice(e.message, true); } } }; });
 async function start() {
   tg?.ready(); tg?.expand();
-  function theme() { const p = tg?.themeParams; if (!p) return; const map = { bg:'bg_color', card:'secondary_bg_color', text:'text_color', hint:'hint_color', accent:'button_color' }; for (const [key, value] of Object.entries(map)) if (p[value]) document.documentElement.style.setProperty(`--${key}`, p[value]); }
+  function theme() { const p = tg?.themeParams; if (!p) return; const map = { bg:'bg_color', card:'secondary_bg_color', text:'text_color', hint:'hint_color', accent:'button_color', 'accent-text':'button_text_color' }; for (const [key, value] of Object.entries(map)) if (p[value]) document.documentElement.style.setProperty(`--${key}`, p[value]); }
   theme(); tg?.onEvent('themeChanged', theme);
   const config = await api('/telegram/config');
   if (!config.configured) { notice('Студия подготовлена. Осталось подключить Telegram-бота.'); return; }

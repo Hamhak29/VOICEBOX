@@ -1,9 +1,12 @@
 const tg = window.Telegram?.WebApp;
 const $ = (id) => document.getElementById(id);
-let voices = [], polling = false;
+let voices = [], polling = false, accessToken = "";
+const audioUrls = new Map();
 function notice(message, error = false) { $('notice').textContent = message; $('notice').classList.toggle('error', error); }
 async function api(path, options = {}) {
-  const response = await fetch(path, { credentials: 'same-origin', ...options });
+  const headers = new Headers(options.headers);
+  if (accessToken) headers.set('Authorization', `Bearer ${accessToken}`);
+  const response = await fetch(path, { credentials: 'same-origin', ...options, headers });
   if (!response.ok) { const error = await response.json().catch(() => ({})); throw new Error(typeof error.detail === 'string' ? error.detail : `Ошибка ${response.status}`); }
   return response.json();
 }
@@ -13,8 +16,18 @@ function card(title, body) { const el = document.createElement('div'); el.classN
 function audioCard(item) {
   const el = card(item.profile_name || 'Озвучка', item.text);
   if (item.status === 'completed') {
-    const audio = document.createElement('audio'); audio.controls = true; audio.preload = 'none'; audio.src = `/audio/${encodeURIComponent(item.id)}`; el.append(audio);
-    const link = document.createElement('a'); link.className = 'download'; link.textContent = 'Скачать WAV'; link.href = audio.src; link.download = 'voicebox.wav'; el.append(link);
+    const audio = document.createElement('audio'); audio.controls = true; audio.preload = 'none'; el.append(audio);
+    const link = document.createElement('a'); link.className = 'download'; link.textContent = 'Скачать WAV'; link.download = 'voicebox.wav'; el.append(link);
+    async function attachAudio() {
+      let url = audioUrls.get(item.id);
+      if (!url) {
+        const response = await fetch(`/audio/${encodeURIComponent(item.id)}`, { headers: { Authorization: `Bearer ${accessToken}` } });
+        if (!response.ok) throw new Error('Не удалось загрузить аудио. Открой приложение заново.');
+        url = URL.createObjectURL(await response.blob()); audioUrls.set(item.id, url);
+      }
+      audio.src = url; link.href = url;
+    }
+    attachAudio().catch((e) => notice(e.message, true));
     const send = document.createElement('button'); send.textContent = 'Отправить мне в Telegram'; send.onclick = () => action(send, async () => { await post(`/telegram/send/${encodeURIComponent(item.id)}`, {}); notice('Аудио отправлено в чат с ботом.'); }); el.append(send);
   } else { const status = document.createElement('p'); status.textContent = item.status === 'failed' ? `Ошибка: ${item.error || 'Не удалось создать озвучку'}` : 'Обрабатываем…'; el.append(status); }
   return el;
@@ -70,6 +83,8 @@ async function start() {
   const config = await api('/telegram/config');
   if (!config.configured) { notice('Студия подготовлена. Осталось подключить Telegram-бота.'); return; }
   if (!tg?.initData) { notice('Открой VOICEBOX кнопкой в Telegram-боте.', true); return; }
-  await post('/telegram/session', { init_data: tg.initData }); await loadVoices(); $('studio').hidden = false; notice('Личная студия подключена.');
+  const session = await post('/telegram/session', { init_data: tg.initData }); accessToken = session.access_token; await loadVoices(); $('studio').hidden = false; notice('Личная студия подключена.');
 }
 start().catch((e) => notice(e.message, true));
+
+window.addEventListener('pagehide', () => { audioUrls.forEach((url) => URL.revokeObjectURL(url)); audioUrls.clear(); });

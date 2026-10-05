@@ -61,7 +61,9 @@ async def private_api(request: Request, call_next):
         if not TOKEN or not ALLOWED:
             return JSONResponse({"detail": "Подключение Telegram ещё не завершено."}, status_code=503)
         try:
-            request.state.telegram_user_id = read_session(request.cookies.get("voicebox_session", ""), TOKEN, ALLOWED)
+            authorization = request.headers.get("authorization", "")
+            session = authorization[7:] if authorization.startswith("Bearer ") else request.cookies.get("voicebox_session", "")
+            request.state.telegram_user_id = read_session(session, TOKEN, ALLOWED)
         except (ValueError, PermissionError):
             return JSONResponse({"detail": "Открой приложение через своего Telegram-бота."}, status_code=401)
         if not any(request.method == method and re.fullmatch(pattern, path) for method, pattern in SAFE_ROUTES):
@@ -107,8 +109,9 @@ async def login(data: Login):
         raise HTTPException(403, "Это личное приложение. Доступ закрыт.")
     except (ValueError, TypeError, KeyError):
         raise HTTPException(401, "Открой приложение через Telegram заново.")
-    response = JSONResponse({"user": {"id": user["id"], "first_name": user.get("first_name", "")}})
-    response.set_cookie("voicebox_session", make_session(user["id"], TOKEN), max_age=86400, httponly=True, secure=True, samesite="strict")
+    session = make_session(user["id"], TOKEN)
+    response = JSONResponse({"user": {"id": user["id"], "first_name": user.get("first_name", "")}, "access_token": session})
+    response.set_cookie("voicebox_session", session, max_age=86400, httponly=True, secure=True, samesite="strict")
     return response
 
 

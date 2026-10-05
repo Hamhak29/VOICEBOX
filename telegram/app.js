@@ -11,7 +11,7 @@ async function api(path, options = {}) {
   return response.json();
 }
 const post = (path, data) => api(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-async function action(button, fn) { button.disabled = true; try { await fn(); } catch (e) { notice(e.message, true); } finally { button.disabled = false; } }
+async function action(button, fn) { if (button.dataset.busy) return; button.dataset.busy = 'true'; button.disabled = true; try { await fn(); } catch (e) { notice(e.message, true); } finally { delete button.dataset.busy; button.disabled = button.id === 'generate' && !voices.some(voiceReady); } }
 function card(title, body) { const el = document.createElement('div'); el.className = 'card'; const heading = document.createElement('h3'); heading.textContent = title; el.append(heading); if (body) { const p = document.createElement('p'); p.textContent = body; el.append(p); } return el; }
 function audioCard(item) {
   const el = card(item.profile_name || 'Озвучка', item.text);
@@ -49,7 +49,7 @@ async function loadVoices(preferredId) {
   }
   const ready = voices.filter(voiceReady);
   $('voice').value = ready.some((v) => v.id === selected) ? selected : (ready[0]?.id || '');
-  $('generate').disabled = !ready.length;
+  $('generate').disabled = !ready.length || !!$('generate').dataset.busy;
   if (!ready.length) { const opt = new Option('Добавь готовый голос или запиши образец', ''); $('voice').prepend(opt); $('voice').value = ''; }
   if (voices.some(v=>v.id === target)) $('clone-target').value = target;
 }
